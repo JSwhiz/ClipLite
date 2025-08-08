@@ -1,0 +1,14 @@
+# Xcode
+build/
+*.xcworkspace
+*.xcuserdatad
+*.xcuserstate
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# temporaries
+*.o
