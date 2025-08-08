@@ -153,3 +153,16 @@ open ClipLite.xcodeproj   # или cmake .. && make
 ```
 
 **Лицензия:** MIT 
+
+## Roadmap & Changelog
+- [Roadmap](ROADMAP.md) • [Changelog](CHANGELOG.md)
+
+## Contributing / Security / Code of Conduct
+- [CONTRIBUTING.md](CONTRIBUTING.md) • [SECURITY.md](SECURITY.md) • [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+
+## Discussions
+- Вопросы и идеи → [GitHub Discussions](https://github.com/JSwhiz/ClipLite/discussions)
+
+## License
+- [MIT](LICENSE) © 2025 Dmitriy Kryuchkov
+

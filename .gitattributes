@@ -1,0 +1,5 @@
+* text=auto eol=lf
+*.{m,mm,h,hpp,cpp} text
+*.png binary
+*.jpg binary
+*.gif binary
