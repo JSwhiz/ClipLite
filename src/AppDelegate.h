@@ -6,6 +6,8 @@
 //
 
 #import <Cocoa/Cocoa.h>
+@class StatusController;
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
+@property (strong, nonatomic) StatusController *ctrl;
 @end

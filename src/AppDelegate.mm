@@ -9,10 +9,8 @@
 #import "StatusController.h"
 
 @implementation AppDelegate
-
-- (void)applicationDidFinishLaunching:(NSNotification *)notification {
-    [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
-    __unused StatusController *ctrl = [[StatusController alloc] init];
+- (void)applicationDidFinishLaunching:(NSNotification *)note {
+    self.ctrl = [StatusController new]; // создаём статус-бар контроллер
 }
-
 @end
+

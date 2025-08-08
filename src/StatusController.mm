@@ -43,98 +43,75 @@ static NSString * const kHistoryFile =
     return self;
 }
 
+static inline NSString* CLTrim30(NSString *s) {
+    if (s.length <= 30) return s;
+    return [[s substringToIndex:29] stringByAppendingString:@"…"];
+}
+
 - (void)showMenu:(id)sender {
     NSMenu *menu = [NSMenu new];
 
-    NSDictionary *smallGrayAttrs = @{
-        NSForegroundColorAttributeName: [NSColor secondaryLabelColor],
-        NSFontAttributeName: [NSFont systemFontOfSize:11]
-    };
-
+    // ——— Pinned ———
     [menu addItemWithTitle:@"Pinned" action:NULL keyEquivalent:@""].enabled = NO;
     for (size_t i = 0; i < _history.get().size(); ++i) {
         if (!_history.get()[i].pinned) continue;
-        NSString *raw = [NSString stringWithUTF8String:_history.get()[i].text.c_str()];
-        NSString *trimmed = raw;
-        if (trimmed.length > 30) {
-            trimmed = [[trimmed substringToIndex:29] stringByAppendingString:@"…"];
-        }
-        NSString *title = [NSString stringWithFormat:@"📌 %@", trimmed];
 
-        NSMenuItem *clipItem = [[NSMenuItem alloc]
-            initWithTitle:title
+        NSString *raw  = [NSString stringWithUTF8String:_history.get()[i].text.c_str()];
+        NSString *trim = (raw.length > 30) ? [[raw substringToIndex:29] stringByAppendingString:@"…"] : raw;
+
+        NSMenuItem *item = [[NSMenuItem alloc]
+            initWithTitle:[NSString stringWithFormat:@"📌 %@", trim]
                    action:@selector(selectClip:)
             keyEquivalent:@""];
-        clipItem.target  = self;
-        clipItem.tag     = (int)i;
-        clipItem.toolTip = raw;
-        [menu addItem:clipItem];
-
-        NSMenuItem *unpin = [[NSMenuItem alloc]
-            initWithTitle:@"Unpin"
-                   action:@selector(togglePin:)
-            keyEquivalent:@""];
-        unpin.target          = self;
-        unpin.tag             = (int)i;
-        unpin.attributedTitle = [[NSAttributedString alloc]
-            initWithString:@"Unpin" attributes:smallGrayAttrs];
-        [menu addItem:unpin];
+        item.target  = self;
+        item.tag     = (int)i;
+        item.toolTip = raw;
+        [menu addItem:item];
     }
     [menu addItem:[NSMenuItem separatorItem]];
 
+    // ——— History ———
     [menu addItemWithTitle:@"History" action:NULL keyEquivalent:@""].enabled = NO;
     NSUInteger hot = 1;
     for (size_t i = 0; i < _history.get().size(); ++i) {
         if (_history.get()[i].pinned) continue;
-        NSString *raw = [NSString stringWithUTF8String:_history.get()[i].text.c_str()];
-        NSString *trimmed = raw;
-        if (trimmed.length > 30) {
-            trimmed = [[trimmed substringToIndex:29] stringByAppendingString:@"…"];
-        }
 
-        NSString *keyEq = (hot <= 9)
-            ? [NSString stringWithFormat:@"%lu", (unsigned long)hot]
-            : @"";
+        NSString *raw  = [NSString stringWithUTF8String:_history.get()[i].text.c_str()];
+        NSString *trim = (raw.length > 30) ? [[raw substringToIndex:29] stringByAppendingString:@"…"] : raw;
 
-        NSMenuItem *clipItem = [[NSMenuItem alloc]
-            initWithTitle:trimmed
+        NSString *keyEq = (hot <= 9) ? [NSString stringWithFormat:@"%lu",(unsigned long)hot] : @"";
+        NSMenuItem *item = [[NSMenuItem alloc]
+            initWithTitle:trim
                    action:@selector(selectClip:)
             keyEquivalent:keyEq];
-        clipItem.target                   = self;
-        clipItem.tag                      = (int)i;
-        clipItem.toolTip                  = raw;
-        clipItem.keyEquivalentModifierMask = NSEventModifierFlagCommand|
-                                             NSEventModifierFlagOption;
-        [menu addItem:clipItem];
-
-        NSMenuItem *pin = [[NSMenuItem alloc]
-            initWithTitle:@"Pin"
-                   action:@selector(togglePin:)
-            keyEquivalent:@""];
-        pin.target          = self;
-        pin.tag             = (int)i;
-        pin.attributedTitle = [[NSAttributedString alloc]
-            initWithString:@"Pin" attributes:smallGrayAttrs];
-        [menu addItem:pin];
-
+        item.target  = self;
+        item.tag     = (int)i;
+        item.toolTip = raw;
+        item.keyEquivalentModifierMask = NSEventModifierFlagCommand | NSEventModifierFlagOption; // рисует ⌘⌥N справа
+        [menu addItem:item];
         hot++;
     }
+
     [menu addItem:[NSMenuItem separatorItem]];
 
-    NSMenuItem *clear = [[NSMenuItem alloc]
-        initWithTitle:@"Clear All"
-               action:@selector(clearAll:)
-        keyEquivalent:@""];
+    // ——— Clear All ———
+    NSMenuItem *clear = [[NSMenuItem alloc] initWithTitle:@"Clear All"
+                                                   action:@selector(clearAll:)
+                                            keyEquivalent:@""];
     clear.target = self;
     [menu addItem:clear];
 
     [_statusItem popUpStatusItemMenu:menu];
 }
 
-
-
-
 - (void)selectClip:(NSMenuItem*)mi {
+    // Если зажат Option — переключаем pin/unpin вместо копирования
+    NSEventModifierFlags flags = [NSEvent modifierFlags] & NSEventModifierFlagDeviceIndependentFlagsMask;
+    if (flags & NSEventModifierFlagOption) {
+        [self togglePin:mi];
+        return;
+    }
+
     int idx = mi.tag;
     if ((size_t)idx >= _history.get().size()) return;
     std::string s = _history.get()[(size_t)idx].text;
@@ -142,7 +119,7 @@ static NSString * const kHistoryFile =
     NSPasteboard *pb = [NSPasteboard generalPasteboard];
     [pb clearContents];
     [pb setString:[NSString stringWithUTF8String:s.c_str()]
-       forType:NSPasteboardTypeString];
+           forType:NSPasteboardTypeString];
 
     UNMutableNotificationContent *content = [UNMutableNotificationContent new];
     content.title = @"ClipLite";
@@ -169,7 +146,9 @@ static NSString * const kHistoryFile =
         std::string path = [kHistoryFile stringByExpandingTildeInPath].UTF8String;
         _history.saveToFile(path);
     }
+    [self showMenu:nil];
 }
+
 
 - (void)clearAll:(id)sender {
     _ignoreNextClipboard = YES;
